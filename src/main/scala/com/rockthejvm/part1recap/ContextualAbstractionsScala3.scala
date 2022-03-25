@@ -87,12 +87,17 @@ object TypeClassesScala3 {
          |""".stripMargin.trim
   }
 
+  given listSerializer[T](using serializer: JSONSerializer[T]): JSONSerializer[List[T]] with {
+    override def toJson(list: List[T]) =
+      list.map(value => serializer.toJson(value)).mkString("[", ",", "]")
+  }
+
   // part 3 - user-facing API
   def convert2Json[T](value: T)(using serializer: JSONSerializer[T]): String =
     serializer.toJson(value)
 
-  def convertList2Json[T](list: List[T])(using serializer: JSONSerializer[T]): String =
-    list.map(value => serializer.toJson(value)).mkString("[", ",", "]")
+//  def convertList2Json[T](list: List[T])(using serializer: JSONSerializer[T]): String =
+//    list.map(value => serializer.toJson(value)).mkString("[", ",", "]")
 
   // part 4 - extension methods just for the types we support
   extension [T](value: T)
@@ -100,8 +105,10 @@ object TypeClassesScala3 {
       serializer.toJson(value)
 
   def main(args: Array[String]): Unit = {
-    println(convertList2Json(List(Person("Alice", 23), Person("Bob", 46))))
+//    println(convertList2Json(List(Person("Alice", 23), Person("Bob", 46))))
     val bob = Person("Bob", 46)
     println(bob.toJson)
+    val someList = List(Person("Alice", 23), Person("Bob", 46))
+    println(someList.toJson)
   }
 }

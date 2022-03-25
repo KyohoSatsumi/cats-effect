@@ -12,6 +12,10 @@
 .idea/**/usage.statistics.xml
 .idea/**/dictionaries
 .idea/**/shelf
+.idea/**/*.iml
+.idea/sbt.xml
+.bsp/
+.idea/codeStyles/
 
 # AWS User-specific
 .idea/**/aws.xml
