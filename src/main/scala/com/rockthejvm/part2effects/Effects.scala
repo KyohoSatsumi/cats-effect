@@ -1,12 +1,16 @@
 package com.rockthejvm.part2effects
 
 import scala.concurrent.Future
+import scala.io.StdIn.readLine
 
 object Effects {
 
   // pure functional programming
   // substitution
-  def combine(a: Int, b: Int): Int = a + b
+  def combine(
+    a: Int,
+    b: Int
+  ): Int = a + b
   val five = combine(2, 3)
   val five_v2 = 2 + 3
   val five_v3 = 5
@@ -20,7 +24,7 @@ object Effects {
 
   // example: change a variable
   var anInt = 0
-  val changingVar: Unit = (anInt += 1)
+  val changingVar: Unit = anInt += 1
   val changingVar_v2: Unit = () // not the same
 
   // side effects are inevitable for useful programs
@@ -50,7 +54,6 @@ object Effects {
   import scala.concurrent.ExecutionContext.Implicits.global
   val aFuture: Future[Int] = Future(42)
 
-
   /*
     example: MyIO data type from the Monads lesson - it IS an effect type
     - describes any computation that might produce side effects
@@ -58,20 +61,48 @@ object Effects {
     - side effects are required for the evaluation of () => A
       - YES, the creation of MyIO does NOT produce the side effects on construction
    */
-  case class MyIO[A](unsafeRun: () => A) {
-    def map[B](f: A => B): MyIO[B] =
+  case class MyIO[A](
+    unsafeRun: () => A
+  ) {
+
+    def map[B](
+      f: A => B
+    ): MyIO[B] =
       MyIO(() => f(unsafeRun()))
 
-    def flatMap[B](f: A => MyIO[B]): MyIO[B] =
+    def flatMap[B](
+      f: A => MyIO[B]
+    ): MyIO[B] =
       MyIO(() => f(unsafeRun()).unsafeRun())
   }
 
-  val anIO: MyIO[Int] = MyIO(() => {
+  val anIO: MyIO[Int] = MyIO { () =>
     println("I'm writing something...")
     42
-  })
+  }
 
-  def main(args: Array[String]): Unit = {
+  // 1. IO returns current time of the system
+  val currentTimeIO: MyIO[Long] = MyIO(() => System.currentTimeMillis())
 
+  // 2. IO which measures the duration of a computation
+  def measure[A](
+    computation: MyIO[A]
+  ): MyIO[Long] =
+    currentTimeIO.flatMap(startTime => computation.flatMap(_ => currentTimeIO.map(endTime => endTime - startTime)))
+
+  // 3. IO which prints something to console
+  def print[A](
+    something: String
+  ): MyIO[Unit] = MyIO(() => System.out.println(something))
+  // 4. IO which read line from the standard input
+  val readLineIO: MyIO[String] = MyIO(() => readLine())
+
+  def main(
+    args: Array[String]
+  ): Unit = {
+    System.out.println(currentTimeIO.unsafeRun())
+    System.out.println(measure(MyIO(() => Thread.sleep(500))).unsafeRun())
+    print("hello").unsafeRun()
+    readLineIO.flatMap(f => print(f)).unsafeRun()
   }
 }
